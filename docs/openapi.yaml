@@ -1,0 +1,215 @@
+openapi: 3.0.3
+info:
+  title: Secure Auth Service
+  version: 1.0.0
+  description: Educational Express authentication security lab with bcrypt, JWT, RBAC, rate limiting, single-session protection and audit logging.
+servers:
+  - url: http://localhost:3000
+paths:
+  /health:
+    get:
+      security: []
+      summary: Health check
+      responses:
+        '200':
+          description: Service is available
+  /auth/register:
+    post:
+      security: []
+      summary: Register user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterRequest'
+      responses:
+        '201':
+          description: User was registered
+        '400':
+          description: Invalid registration payload
+  /auth/login:
+    post:
+      security: []
+      summary: Login user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: JWT access token
+        '401':
+          description: Invalid credentials
+        '429':
+          description: Too many login attempts
+  /auth/logout:
+    post:
+      summary: Logout current user
+      security:
+        - bearerAuth: []
+      responses:
+        '204':
+          description: Logged out
+        '401':
+          description: Missing or invalid token
+  /auth/me:
+    get:
+      summary: Current user profile
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Current user profile
+        '401':
+          description: Missing, invalid or expired token
+  /auth/login-attempts:
+    get:
+      summary: Login attempts audit log
+      description: Admin-only endpoint.
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Login attempts list
+        '401':
+          description: Missing or invalid token
+        '403':
+          description: Admin role is required
+  /auth/password-reset/request:
+    post:
+      security: []
+      summary: Request one-time password reset token
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - username
+              properties:
+                username:
+                  type: string
+                  example: user1
+      responses:
+        '200':
+          description: Reset token was generated for existing account
+  /auth/password-reset/confirm:
+    post:
+      security: []
+      summary: Confirm password reset
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - token
+                - newPassword
+              properties:
+                token:
+                  type: string
+                newPassword:
+                  type: string
+                  example: ChangedPass123!
+      responses:
+        '200':
+          description: Password was updated
+        '400':
+          description: Invalid or expired token
+  /user:
+    get:
+      summary: Protected user route
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Available to any authenticated user
+        '401':
+          description: Missing or invalid token
+  /moderator:
+    get:
+      summary: Protected moderator route
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Available to moderator and admin
+        '401':
+          description: Missing or invalid token
+        '403':
+          description: Moderator or admin role is required
+  /admin:
+    get:
+      summary: Protected admin route
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Available only to admin
+        '401':
+          description: Missing or invalid token
+        '403':
+          description: Admin role is required
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    RegisterRequest:
+      type: object
+      required:
+        - username
+        - password
+      properties:
+        username:
+          type: string
+          example: new_user
+        displayName:
+          type: string
+          example: New User
+        email:
+          type: string
+          example: new-user@example.com
+        password:
+          type: string
+          example: NewUserPass123!
+    LoginRequest:
+      type: object
+      required:
+        - username
+        - password
+      properties:
+        username:
+          type: string
+          example: user1
+        password:
+          type: string
+          example: UserPass123!
+    PublicUser:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 3
+        username:
+          type: string
+          example: user1
+        displayName:
+          type: string
+          example: Regular User
+        role:
+          type: string
+          enum:
+            - user
+            - moderator
+            - admin
+        lastLogin:
+          type: string
+          nullable: true
