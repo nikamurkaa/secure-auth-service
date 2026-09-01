@@ -1,42 +1,26 @@
 # Secure Auth Service
 
-Учебный backend-проект по безопасной аутентификации: небольшой микросервис на **Node.js + Express**, в котором реализованы современные механизмы защиты аккаунтов и маршрутов.
+**Secure Auth Service** — учебный backend security lab на **Node.js + Express**, посвящённый безопасной аутентификации, управлению сессиями и role-based access control.
 
-Проект показывает, как строить защищённый authentication service:
+Проект показывает не только happy path авторизации, но и защиту от типичных ошибок: небезопасного хранения паролей, brute force, чрезмерных прав, утечки внутренних полей и повторного использования reset token.
 
-- регистрация пользователей;
-- вход с проверкой пароля;
-- хранение паролей через bcrypt hash + salt;
-- JWT access tokens с коротким временем жизни;
-- ограничение попыток входа: 3 попытки в минуту;
-- role-based access control для ролей `user`, `moderator`, `admin`;
-- запрет параллельных сессий для одного пользователя;
-- экранирование пользовательских данных в ответах API;
-- логирование всех попыток входа;
-- восстановление пароля через одноразовый reset token.
-
-> Проект является учебным security lab и предназначен для портфолио. Это не production-ready система авторизации.
+> Это учебный security lab для портфолио, а не production-ready identity provider.
 
 ## Что демонстрирует проект
 
-В проекте реализованы:
-
-- REST API на Express;
-- разделение приложения на `app`, `server`, `routes`, `middleware`, `services`, `data`, `utils`;
-- `bcryptjs` для безопасного хеширования паролей;
-- `jsonwebtoken` для выпуска и проверки JWT;
-- `express-rate-limit` для защиты `/auth/login` от перебора паролей;
-- middleware для проверки Bearer JWT;
-- RBAC middleware для защищённых маршрутов;
-- session invalidation: новый вход сбрасывает предыдущий токен пользователя;
-- public DTO без `passwordHash`, reset token hash и внутренних session fields;
+- регистрация и login flow;
+- bcrypt hash + salt для паролей;
+- короткоживущие JWT access tokens;
+- RBAC для `user`, `moderator`, `admin`;
+- rate limiting для `/auth/login`;
+- single-session protection: новый login инвалидирует предыдущую сессию;
+- public DTO без `passwordHash` и внутренних session/reset fields;
+- audit log успешных и неуспешных попыток входа;
+- одноразовый password reset token, хранящийся в виде hash;
 - единый JSON-формат ошибок;
-- OpenAPI-спецификация;
-- Postman-коллекция;
-- автотесты на встроенном `node:test`;
-- GitHub Actions CI.
+- OpenAPI, Postman, automated tests и GitHub Actions CI.
 
-## Стек технологий
+## Стек
 
 - Node.js
 - Express
@@ -49,86 +33,57 @@
 - Postman
 - GitHub Actions
 
-## Структура проекта
+## Архитектура
+
+```text
+Client
+  │
+  ▼
+Express routes
+  │
+  ├── auth middleware ──► JWT / RBAC checks
+  │
+  ├── auth service ─────► password/session/reset logic
+  │
+  └── public DTO ───────► filtered API response
+```
+
+Основные каталоги:
 
 ```text
 secure-auth-service/
 ├── src/
-│   ├── app.js
-│   ├── server.js
-│   ├── data/
-│   │   └── users.js
-│   ├── middleware/
-│   │   ├── auth.js
-│   │   └── errors.js
 │   ├── routes/
-│   │   ├── auth.js
-│   │   └── protected.js
+│   ├── middleware/
 │   ├── services/
-│   │   └── auth.js
+│   ├── data/
 │   └── utils/
-│       ├── escape.js
-│       ├── password.js
-│       └── tokens.js
 ├── tests/
-│   └── auth-api.test.js
 ├── docs/
-│   ├── manual-checks.md
-│   ├── openapi.yaml
-│   ├── security-model.md
-│   └── test-plan.md
 ├── postman/
-│   ├── secure-auth-service.postman_collection.json
-│   └── secure-auth-service.local.postman_environment.json
 ├── .github/workflows/ci.yml
 ├── .env.example
-├── .editorconfig
-├── .gitignore
-├── LICENSE
 ├── package.json
 └── README.md
 ```
 
-## Установка и запуск
-
-### 1. Клонировать репозиторий
+## Локальный запуск
 
 ```bash
-git clone https://github.com/kindarufy/secure-auth-service.git
+git clone https://github.com/nikamurkaa/secure-auth-service.git
 cd secure-auth-service
-```
-
-### 2. Установить зависимости
-
-```bash
 npm install
-```
-
-### 3. Настроить переменные окружения
-
-Можно скопировать пример:
-
-```bash
 cp .env.example .env
-```
-
-Для локальной учебной проверки приложение может запуститься и без `.env`, но для нормального проекта `JWT_SECRET` обязательно нужно заменить.
-
-### 4. Запустить приложение
-
-```bash
 npm start
 ```
 
-По умолчанию API будет доступно по адресу:
+По умолчанию API доступно на:
 
 ```text
 http://localhost:3000
 ```
 
-## Переменные окружения
-
-Пример переменных находится в файле `.env.example`:
+Пример `.env`:
 
 ```env
 PORT=3000
@@ -141,278 +96,65 @@ PASSWORD_RESET_TOKEN_TTL_MS=600000
 
 ## Demo-аккаунты
 
+Учётные данные ниже являются **локальными демонстрационными данными проекта**, а не реальными аккаунтами.
+
 | Роль | Username | Password |
-|---|---|---|
+| --- | --- | --- |
 | Admin | `admin` | `AdminPass123!` |
 | Moderator | `moderator` | `ModeratorPass123!` |
 | User | `user1` | `UserPass123!` |
 
-## API endpoints
+## Основные endpoint'ы
 
-### Health check
+| Метод | Endpoint | Назначение |
+| --- | --- | --- |
+| `GET` | `/health` | Health check |
+| `POST` | `/auth/register` | Регистрация |
+| `POST` | `/auth/login` | Вход |
+| `GET` | `/auth/me` | Текущий пользователь |
+| `POST` | `/auth/logout` | Инвалидация текущей сессии |
+| `GET` | `/user` | Маршрут для авторизованных пользователей |
+| `GET` | `/moderator` | Маршрут для moderator/admin |
+| `GET` | `/admin` | Маршрут только для admin |
+| `GET` | `/auth/login-attempts` | Audit log для admin |
+| `POST` | `/auth/password-reset/request` | Создать reset token |
+| `POST` | `/auth/password-reset/confirm` | Сменить пароль |
 
-```http
-GET /health
-```
+## Security controls
 
-Пример ответа:
+| Риск | Реализация |
+| --- | --- |
+| Утечка паролей | bcrypt hash + salt |
+| Brute force | rate limiting на login |
+| Excessive privileges | RBAC middleware |
+| Старые активные сессии | `activeSessionId` инвалидирует предыдущий JWT |
+| Утечка внутренних полей | public DTO / response filtering |
+| Повторное использование reset token | одноразовый token + SHA-256 hash |
+| Отсутствие аудита | журнал login attempts |
 
-```json
-{
-  "status": "ok",
-  "service": "secure-auth-service"
-}
-```
+Подробнее: [`docs/security-model.md`](docs/security-model.md).
 
-### Регистрация
-
-```http
-POST /auth/register
-Content-Type: application/json
-```
-
-```json
-{
-  "username": "new_user",
-  "displayName": "New User",
-  "email": "new-user@example.com",
-  "password": "NewUserPass123!"
-}
-```
-
-Регистрация всегда создаёт пользователя с ролью `user`. Роль из тела запроса не используется для повышения прав.
-
-Пример ответа не содержит `passwordHash`:
-
-```json
-{
-  "id": 4,
-  "username": "new_user",
-  "displayName": "New User",
-  "role": "user",
-  "lastLogin": null
-}
-```
-
-### Вход
-
-```http
-POST /auth/login
-Content-Type: application/json
-```
-
-```json
-{
-  "username": "user1",
-  "password": "UserPass123!"
-}
-```
-
-Пример ответа:
-
-```json
-{
-  "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
-  "tokenType": "Bearer",
-  "expiresIn": "15m",
-  "user": {
-    "id": 3,
-    "username": "user1",
-    "displayName": "Regular User",
-    "role": "user",
-    "lastLogin": "2026-05-03T12:00:00.000Z"
-  }
-}
-```
-
-### Получить текущего пользователя
-
-```http
-GET /auth/me
-Authorization: Bearer <accessToken>
-```
-
-### Выход
-
-```http
-POST /auth/logout
-Authorization: Bearer <accessToken>
-```
-
-После выхода текущий токен становится недействительным.
-
-### User route
-
-```http
-GET /user
-Authorization: Bearer <accessToken>
-```
-
-Доступно для любой авторизованной роли.
-
-### Moderator route
-
-```http
-GET /moderator
-Authorization: Bearer <accessToken>
-```
-
-Доступно для `moderator` и `admin`.
-
-### Admin route
-
-```http
-GET /admin
-Authorization: Bearer <accessToken>
-```
-
-Доступно только для `admin`.
-
-### Login attempts audit log
-
-```http
-GET /auth/login-attempts
-Authorization: Bearer <adminAccessToken>
-```
-
-Доступно только администратору.
-
-### Запрос reset token
-
-```http
-POST /auth/password-reset/request
-Content-Type: application/json
-```
-
-```json
-{
-  "username": "user1"
-}
-```
-
-В учебной версии токен возвращается в ответе как `demoResetToken`, чтобы сценарий можно было проверить без SMS и email.
-
-### Подтверждение сброса пароля
-
-```http
-POST /auth/password-reset/confirm
-Content-Type: application/json
-```
-
-```json
-{
-  "token": "demo-reset-token",
-  "newPassword": "ChangedPass123!"
-}
-```
-
-Reset token одноразовый. После успешной смены пароля старые активные сессии пользователя сбрасываются.
-
-## Безопасность
-
-Проект демонстрирует защиту нескольких ключевых сценариев.
-
-| Требование | Как реализовано |
-|---|---|
-| Хеширование паролей | `bcryptjs`, соль создаётся bcrypt автоматически |
-| Ограничение входа | `express-rate-limit`: 3 попытки в минуту на `/auth/login` |
-| Короткоживущий JWT | `JWT_EXPIRES_IN=15m` по умолчанию |
-| Роли | `user`, `moderator`, `admin` |
-| Защищённые маршруты | `authenticate`, `requireRole`, `requireAnyRole` |
-| Запрет параллельных сессий | при новом login меняется `activeSessionId`, старый JWT отклоняется |
-| Экранирование вывода | public DTO проходит через `escapeHtml` |
-| Логирование входов | каждый успешный и неуспешный login попадает в audit log |
-| Password reset | одноразовый reset token хранится только в виде SHA-256 hash |
-
-Подробнее: [`docs/security-model.md`](docs/security-model.md)
-
-## Ручная проверка
-
-Все команды для ручной проверки находятся в файле:
-
-```text
-docs/manual-checks.md
-```
-
-Пример входа:
-
-```bash
-curl -X POST http://localhost:3000/auth/login \
-  -H "Content-Type: application/json" \
-  -d '{"username":"admin","password":"AdminPass123!"}'
-```
-
-Пример проверки admin route:
-
-```bash
-curl http://localhost:3000/admin \
-  -H "Authorization: Bearer <accessToken>"
-```
-
-## Автотесты
-
-Запуск тестов:
+## Проверка
 
 ```bash
 npm test
-```
-
-Проверка синтаксиса основных файлов:
-
-```bash
 npm run check
 ```
 
-В тестах проверяется:
+Тесты проверяют регистрацию, фильтрацию чувствительных данных, login/rate limiting, JWT/RBAC, session invalidation, expired tokens, audit log и password reset.
 
-- доступность `/health`;
-- регистрация пользователя;
-- отсутствие `passwordHash` в ответах;
-- экранирование пользовательского `displayName`;
-- запрет повторной регистрации username;
-- невозможность входа с неверным паролем;
-- блокировка `/auth/login` после 3 неудачных попыток;
-- выдача JWT на 15 минут;
-- запрет `/admin` для обычного пользователя;
-- доступ `/admin` для администратора;
-- логирование login attempts;
-- запрет параллельных сессий;
-- отклонение истёкшего JWT;
-- одноразовый reset token для смены пароля.
-
-## OpenAPI
-
-Спецификация API находится в файле:
-
-```text
-docs/openapi.yaml
-```
-
-Её можно открыть в Swagger Editor или использовать как документацию к API.
-
-## Postman
-
-Postman-коллекция и environment находятся в папке:
-
-```text
-postman/
-```
-
-Импортируй в Postman:
-
-- `secure-auth-service.postman_collection.json`
-- `secure-auth-service.local.postman_environment.json`
+Ручные сценарии: [`docs/manual-checks.md`](docs/manual-checks.md).  
+OpenAPI: [`docs/openapi.yaml`](docs/openapi.yaml).  
+Postman: [`postman/`](postman/).
 
 ## CI
 
-В проекте настроен GitHub Actions workflow:
+`.github/workflows/ci.yml` устанавливает зависимости, выполняет проверки и запускает automated tests. GitHub Actions workflow проекта запускался успешно.
 
-```text
-.github/workflows/ci.yml
-```
+## Статус
 
-CI устанавливает зависимости, проверяет синтаксис и запускает автотесты.
+Проект завершён и используется как portfolio security lab по **authentication security, access control и API hardening**.
 
-## Статус проекта
+## Автор
 
-Проект выполнен как учебная работа по безопасности веб-приложений и оформлен как портфолио-проект. Он показывает понимание базовых принципов безопасной аутентификации, контроля доступа и защиты API.
+[Николь Журбенко](https://github.com/nikamurkaa)
