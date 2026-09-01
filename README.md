@@ -4,7 +4,7 @@
 
 Проект показывает не только happy path авторизации, но и защиту от типичных ошибок: небезопасного хранения паролей, brute force, чрезмерных прав, утечки внутренних полей и повторного использования reset token.
 
-> Это учебный security lab для портфолио, а не production-ready identity provider.
+> Это учебный security lab, а не production-ready identity provider.
 
 ## Что демонстрирует проект
 
@@ -153,7 +153,7 @@ Postman: [`postman/`](postman/).
 
 ## Статус
 
-Проект завершён и используется как portfolio security lab по **authentication security, access control и API hardening**.
+Проект завершён как учебный security lab по **authentication security, access control и API hardening**.
 
 ## Автор
 
