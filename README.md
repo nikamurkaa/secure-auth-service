@@ -69,13 +69,20 @@ secure-auth-service/
 
 ## Локальный запуск
 
+Используйте Node.js 22 (минимум 18). Проверьте `node --version`.
+
+
 ```bash
 git clone https://github.com/nikamurkaa/secure-auth-service.git
 cd secure-auth-service
-npm install
+npm ci
 cp .env.example .env
-npm start
+node --env-file=.env src/server.js
 ```
+
+Команда выше рассчитана на Node.js 22 и явно загружает `.env`.
+`npm start` использует только переменные процесса и встроенные значения;
+сам по себе файл `.env` этот скрипт не читает.
 
 По умолчанию API доступно на:
 
@@ -178,3 +185,7 @@ Postman: [`postman/`](postman/).
 ## Автор
 
 [Николь Журбенко](https://github.com/nikamurkaa)
+
+Команды выполняются из корня репозитория. Остановка сервера — `Ctrl+C`.
+В PowerShell файл окружения можно скопировать командой
+`Copy-Item .env.example .env`.
