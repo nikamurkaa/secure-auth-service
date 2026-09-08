@@ -134,6 +134,26 @@ PASSWORD_RESET_TOKEN_TTL_MS=600000
 
 Подробнее: [`docs/security-model.md`](docs/security-model.md).
 
+## Демонстрация security controls
+
+### Role-Based Access Control
+
+Обычный пользователь успешно аутентифицирован, но не имеет права обращаться к admin-only endpoint. RBAC middleware возвращает `403 Forbidden`.
+
+![Secure Auth Service — RBAC access denied](docs/assets/secure-auth-rbac-forbidden.png)
+
+### Login rate limiting
+
+Повторные неуспешные попытки входа ограничиваются rate limiter. После достижения установленного лимита API возвращает `429 Too Many Requests`.
+
+![Secure Auth Service — login rate limiting](docs/assets/secure-auth-rate-limit.png)
+
+### Single-session protection
+
+Повторный вход пользователя создаёт новую активную сессию и инвалидирует предыдущий JWT. Запрос со старым token отклоняется как истёкшая сессия.
+
+![Secure Auth Service — session invalidation](docs/assets/secure-auth-session-invalidation.png)
+
 ## Проверка
 
 ```bash
