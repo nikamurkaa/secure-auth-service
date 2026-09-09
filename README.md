@@ -1,26 +1,28 @@
+**English** | [Русский](README.ru.md)
+
 # Secure Auth Service
 
-**Secure Auth Service** — учебный backend security lab на **Node.js + Express**, посвящённый безопасной аутентификации, управлению сессиями и role-based access control.
+**Secure Auth Service** is an educational backend security lab built with **Node.js + Express**, focused on secure authentication, session management, and role-based access control.
 
-Проект показывает не только happy path авторизации, но и защиту от типичных ошибок: небезопасного хранения паролей, brute force, чрезмерных прав, утечки внутренних полей и повторного использования reset token.
+The project demonstrates both the authentication happy path and protection against common mistakes: unsafe password storage, brute force, excessive privileges, internal field exposure, and reset token reuse.
 
-> Это учебный security lab, а не production-ready identity provider.
+> This is an educational security lab, not a production-ready identity provider.
 
-## Что демонстрирует проект
+## Skills demonstrated
 
-- регистрация и login flow;
-- bcrypt hash + salt для паролей;
-- короткоживущие JWT access tokens;
-- RBAC для `user`, `moderator`, `admin`;
-- rate limiting для `/auth/login`;
-- single-session protection: новый login инвалидирует предыдущую сессию;
-- public DTO без `passwordHash` и внутренних session/reset fields;
-- audit log успешных и неуспешных попыток входа;
-- одноразовый password reset token, хранящийся в виде hash;
-- единый JSON-формат ошибок;
-- OpenAPI, Postman, automated tests и GitHub Actions CI.
+- registration and login flows;
+- bcrypt password hashing with salt;
+- short-lived JWT access tokens;
+- RBAC for `user`, `moderator`, and `admin`;
+- rate limiting for `/auth/login`;
+- single-session protection: a new login invalidates the previous session;
+- public DTOs without `passwordHash` or internal session/reset fields;
+- an audit log of successful and failed login attempts;
+- a single-use password reset token stored as a hash;
+- a consistent JSON error format;
+- OpenAPI, Postman, automated tests, and GitHub Actions CI.
 
-## Стек
+## Tech stack
 
 - Node.js
 - Express
@@ -33,7 +35,7 @@
 - Postman
 - GitHub Actions
 
-## Архитектура
+## Architecture
 
 ```text
 Client
@@ -48,7 +50,7 @@ Express routes
   └── public DTO ───────► filtered API response
 ```
 
-Основные каталоги:
+Main directories:
 
 ```text
 secure-auth-service/
@@ -67,12 +69,12 @@ secure-auth-service/
 └── README.md
 ```
 
-## Локальный запуск
+## Local setup
 
-Используйте Node.js 22 (минимум 18). Проверьте `node --version`.
+Use Node.js 22 (minimum 18). Check `node --version`.
 
-Команды выполняются из корня репозитория. В PowerShell файл окружения
-можно скопировать командой `Copy-Item .env.example .env`.
+Run the commands from the repository root. In PowerShell, copy the environment file
+with `Copy-Item .env.example .env`.
 
 ```bash
 git clone https://github.com/nikamurkaa/secure-auth-service.git
@@ -82,19 +84,19 @@ cp .env.example .env
 node --env-file=.env src/server.js
 ```
 
-Команда выше рассчитана на Node.js 22 и явно загружает `.env`.
-`npm start` использует только переменные процесса и встроенные значения;
-сам по себе файл `.env` этот скрипт не читает.
+The command above targets Node.js 22 and explicitly loads `.env`.
+`npm start` uses only process environment variables and built-in defaults;
+the script does not read `.env` on its own.
 
-По умолчанию API доступно на:
+By default, the API is available at:
 
 ```text
 http://localhost:3000
 ```
 
-Остановка сервера — `Ctrl+C`.
+Stop the server with `Ctrl+C`.
 
-Пример `.env`:
+Example `.env`:
 
 ```env
 PORT=3000
@@ -105,87 +107,87 @@ LOGIN_RATE_LIMIT_MAX=3
 PASSWORD_RESET_TOKEN_TTL_MS=600000
 ```
 
-## Demo-аккаунты
+## Demo accounts
 
-Учётные данные ниже являются **локальными демонстрационными данными проекта**, а не реальными аккаунтами.
+The credentials below are **local demonstration data for this project**, not real accounts.
 
-| Роль | Username | Password |
+| Role | Username | Password |
 | --- | --- | --- |
 | Admin | `admin` | `AdminPass123!` |
 | Moderator | `moderator` | `ModeratorPass123!` |
 | User | `user1` | `UserPass123!` |
 
-## Основные endpoint'ы
+## Main endpoints
 
-| Метод | Endpoint | Назначение |
+| Method | Endpoint | Purpose |
 | --- | --- | --- |
 | `GET` | `/health` | Health check |
-| `POST` | `/auth/register` | Регистрация |
-| `POST` | `/auth/login` | Вход |
-| `GET` | `/auth/me` | Текущий пользователь |
-| `POST` | `/auth/logout` | Инвалидация текущей сессии |
-| `GET` | `/user` | Маршрут для авторизованных пользователей |
-| `GET` | `/moderator` | Маршрут для moderator/admin |
-| `GET` | `/admin` | Маршрут только для admin |
-| `GET` | `/auth/login-attempts` | Audit log для admin |
-| `POST` | `/auth/password-reset/request` | Создать reset token |
-| `POST` | `/auth/password-reset/confirm` | Сменить пароль |
+| `POST` | `/auth/register` | Register |
+| `POST` | `/auth/login` | Log in |
+| `GET` | `/auth/me` | Current user |
+| `POST` | `/auth/logout` | Invalidate the current session |
+| `GET` | `/user` | Route for authenticated users |
+| `GET` | `/moderator` | Route for moderator/admin |
+| `GET` | `/admin` | Admin-only route |
+| `GET` | `/auth/login-attempts` | Admin audit log |
+| `POST` | `/auth/password-reset/request` | Create a reset token |
+| `POST` | `/auth/password-reset/confirm` | Change password |
 
 ## Security controls
 
-| Риск | Реализация |
+| Risk | Implementation |
 | --- | --- |
-| Утечка паролей | bcrypt hash + salt |
-| Brute force | rate limiting на login |
+| Password exposure | bcrypt hash + salt |
+| Brute force | login rate limiting |
 | Excessive privileges | RBAC middleware |
-| Старые активные сессии | `activeSessionId` инвалидирует предыдущий JWT |
-| Утечка внутренних полей | public DTO / response filtering |
-| Повторное использование reset token | одноразовый token + SHA-256 hash |
-| Отсутствие аудита | журнал login attempts |
+| Old active sessions | `activeSessionId` invalidates the previous JWT |
+| Internal field exposure | public DTO / response filtering |
+| Reset token reuse | single-use token + SHA-256 hash |
+| Missing audit trail | login attempt log |
 
-Подробнее: [`docs/security-model.md`](docs/security-model.md).
+See [`docs/security-model.md`](docs/security-model.md) for details.
 
-## Демонстрация security controls
+## Security control demonstrations
 
 ### Role-Based Access Control
 
-Обычный пользователь успешно аутентифицирован, но не имеет права обращаться к admin-only endpoint. RBAC middleware возвращает `403 Forbidden`.
+A regular user is successfully authenticated but lacks permission to access the admin-only endpoint. RBAC middleware returns `403 Forbidden`.
 
 ![Secure Auth Service — RBAC access denied](docs/assets/secure-auth-rbac-forbidden.png)
 
 ### Login rate limiting
 
-Повторные неуспешные попытки входа ограничиваются rate limiter. После достижения установленного лимита API возвращает `429 Too Many Requests`.
+Repeated failed login attempts are restricted by the rate limiter. Once the configured limit is reached, the API returns `429 Too Many Requests`.
 
 ![Secure Auth Service — login rate limiting](docs/assets/secure-auth-rate-limit.png)
 
 ### Single-session protection
 
-Повторный вход пользователя создаёт новую активную сессию и инвалидирует предыдущий JWT. Запрос со старым token отклоняется как истёкшая сессия.
+A new login creates a new active session and invalidates the previous JWT. Requests using the old token are rejected as an expired session.
 
 ![Secure Auth Service — session invalidation](docs/assets/secure-auth-session-invalidation.png)
 
-## Проверка
+## Verification
 
 ```bash
 npm test
 npm run check
 ```
 
-Тесты проверяют регистрацию, фильтрацию чувствительных данных, login/rate limiting, JWT/RBAC, session invalidation, expired tokens, audit log и password reset.
+Tests cover registration, sensitive data filtering, login/rate limiting, JWT/RBAC, session invalidation, expired tokens, audit logs, and password reset.
 
-Ручные сценарии: [`docs/manual-checks.md`](docs/manual-checks.md).  
+Manual scenarios: [`docs/manual-checks.md`](docs/manual-checks.md).  
 OpenAPI: [`docs/openapi.yaml`](docs/openapi.yaml).  
 Postman: [`postman/`](postman/).
 
 ## CI
 
-`.github/workflows/ci.yml` устанавливает зависимости, выполняет проверки и запускает automated tests. GitHub Actions workflow проекта запускался успешно.
+`.github/workflows/ci.yml` installs dependencies, performs checks, and runs automated tests. The project's GitHub Actions workflow has run successfully.
 
-## Статус
+## Status
 
-Проект завершён как учебный security lab по **authentication security, access control и API hardening**.
+Completed as an educational security lab on **authentication security, access control, and API hardening**.
 
-## Автор
+## Author
 
-[Николь Журбенко](https://github.com/nikamurkaa)
+[Nicole Zhurbenko](https://github.com/nikamurkaa)
