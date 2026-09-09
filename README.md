@@ -71,6 +71,8 @@ secure-auth-service/
 
 Используйте Node.js 22 (минимум 18). Проверьте `node --version`.
 
+Команды выполняются из корня репозитория. В PowerShell файл окружения
+можно скопировать командой `Copy-Item .env.example .env`.
 
 ```bash
 git clone https://github.com/nikamurkaa/secure-auth-service.git
@@ -89,6 +91,8 @@ node --env-file=.env src/server.js
 ```text
 http://localhost:3000
 ```
+
+Остановка сервера — `Ctrl+C`.
 
 Пример `.env`:
 
@@ -185,7 +189,3 @@ Postman: [`postman/`](postman/).
 ## Автор
 
 [Николь Журбенко](https://github.com/nikamurkaa)
-
-Команды выполняются из корня репозитория. Остановка сервера — `Ctrl+C`.
-В PowerShell файл окружения можно скопировать командой
-`Copy-Item .env.example .env`.
